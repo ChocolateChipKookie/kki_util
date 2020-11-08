@@ -157,15 +157,58 @@ void test_find_all(){
     std::cout << "Find     " << (end1 - begin1).count() << std::endl;
 }
 
-int main() {
+class a{
+public:
+    a()=default;
 
+    void print() const{
+        std::cout << 'A' << std::endl;
+    }
+};
+
+class b{
+public:
+    b()=default;
+
+    void print() const{
+        std::cout << 'B' << std::endl;
+    }
+};
+
+
+class c{
+public:
+
+    explicit c(int i) : i{i}{}
+
+    void print() const{
+        std::cout << "C " << i << std::endl;
+    }
+
+private:
+    int i = 0;
+};
+
+template <typename T_c, typename... T_args>
+void construct_in_place(T_args&&... args){
+    T_c obj(args...);
+
+    obj.print();
+}
+
+int main() {
+    construct_in_place<c>(1);
+
+
+    return 0;
     kki::string a{"AdiDoloresMia"};
 
-    std::cout << a << std::endl;
-    std::cout << a.substr(0, 3) << std::endl;
-    std::cout << a.substr(3, 7) << std::endl;
-    std::cout << a.substr(10, 3) << std::endl;
+    kki::string_builder sb{"Adi"};
 
+
+    a = sb;
+
+    std::cout << a << std::endl;
     return 0;
     std::string val;
 

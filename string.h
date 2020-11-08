@@ -15,26 +15,7 @@
 
 namespace kki
 {
-    // TODO: Add compatibility with std::string and other standard library stuffs
     class string_builder;
-
-    // Implemented:
-    //      Constructors: (normal and formatted)
-    //      Find
-    //      Split
-    //      Trim
-    //      Iteration
-    //      Basic operations
-    //      shrink
-    //      c str
-    //      detach
-    // ToDo:
-    //      Arithmetic
-    //      std:: compatability
-    //      Ranges
-    //      += inplace if use count == 1 new otherwise
-    //          Same with cstr
-    //      split iterator
 
     class string{
     public:
@@ -52,7 +33,7 @@ namespace kki
 
         string(const char *cstr) : string(strlen(cstr), cstr){}
         string(size_t len, const char *data) {
-            container = kki::make_ref<std::vector<char>>();
+            container = make_ref<std::vector<char>>();
             container->reserve(len + 1);
             std::copy(data, data + len, std::back_inserter(*container));
             container->emplace_back('\0');
@@ -63,7 +44,6 @@ namespace kki
         // Format consructor
         template<typename ...T_args>
         string(const char *format, T_args ...args);
-
 
         // ================ //
         // Basic operations //
@@ -100,14 +80,14 @@ namespace kki
             return size() == len && equal(data(), other, len);
         }
         inline bool operator ==(const string& other) const {
-            return size() == other.size() && equal(data(), other.data(), size());
+            return size() == other.size() && (data() == other.data() || equal(data(), other.data(), size()));
         }
 
         inline bool operator !=(const char* other) const {
-            return compare(data(), other, std::min(size(), strlen(other))) != 0;
+            return !(*this == other);
         }
         inline bool operator !=(const string& other) const {
-            return compare(data(), other.data(), std::min(size(), other.size())) != 0;
+            return !(*this == other);
         }
 
         inline bool operator <(const char* other) const {
@@ -144,11 +124,15 @@ namespace kki
 
         template<typename T_add>
         string_builder operator+(T_add other);
+        template<typename T_add>
+        void operator+=(const T_add& other);
 
-        void operator+=(const string& other){
+        // ============== //
+        // Multiplication //
+        // ============== //
 
-        }
-
+        string_builder operator*(size_t _i);
+        void operator*=(size_t _i);
 
         // ====== //
         // Search //
@@ -273,6 +257,7 @@ namespace kki
         // ===== //
         // Split //
         // ===== //
+
         // Split string with the delimiter being one or more whitespaces
         template<typename T_alloc=std::allocator<size_t>>
         std::vector<string, T_alloc> split() const{
@@ -348,7 +333,6 @@ namespace kki
             assert(_first <= end());
             return string{container, _first, _last};
         }
-
         string substr(const char *first, const char *last=nullptr){
             last = last != nullptr ? last : end();
             assert(begin() <= first);
@@ -356,6 +340,18 @@ namespace kki
             assert(last <= end());
 
             return string{container, first, last};
+        }
+
+        // ========== //
+        // Substrings //
+        // ========== //
+
+        string operator()(size_t first, size_t end){
+            return substr(first, end, false);
+        }
+
+        struct range_iterator{
+            range_iterator(size_t start, size_t end, int )
         }
 
         // ================= //
@@ -373,7 +369,8 @@ namespace kki
                 // Get the current size of the string
                 size_t len = size();
                 // Create new container
-                ref<std::vector<char>> res = make_ref<std::vector<char>>();
+                auto res = make_ref<std::vector<char>>();
+
                 res->reserve(len + 1);
                 // Copy contents and zero terminate
                 std::copy(begin(), end(), std::back_inserter(*res));
@@ -389,22 +386,24 @@ namespace kki
 
         // Return: returns true if string is of minimal size
         bool shrink(){
+            std::vector<char>& data = *container;
+
             // Check if the size of the container is minimal
             // -1 because of the zero terminated string
-            if ((container->size() - 1) != size()){
+            if ((data.size() - 1) != size()){
                 // Check if it is the only string that uses the container
                 if (container.use_count() == 1){
                     size_t len = size();
                     // If the data is not at the start of the container, copy it to the start
-                    if (begin() != container->data()){
-                        std::copy(begin(), end(), container->begin());
+                    if (begin() != data.data()){
+                        std::copy(begin(), end(), data.begin());
                     }
                     // Zero terminate the string
-                    container->at(len) = '\0';
+                    data[len] = '\0';
                     // Shrink the string to the new size
-                    container->resize(len + 1);
+                    data.resize(len + 1);
                     // Reset the pointers to the begining and end of string
-                    _begin = container->data();
+                    _begin = data.data();
                     _end = _begin + len;
                     return true;
                 }
@@ -416,14 +415,15 @@ namespace kki
 
         // Return c style null terminated pointer
         const char* cstr(){
+            std::vector<char>& data = *container;
             // If the string is not already null terminated process string
             if ((*end()) != '\0'){
                 // If the string is the only one that uses the container zero terminate it in place
                 if (container.use_count() == 1){
                     // Calculate offset from the start of container data to start of string
-                    size_t offset = begin() - container->data();
+                    size_t offset = begin() - data.data();
                     // Set the value at the end of the container to \0
-                    container->at(offset + size()) = '\0';
+                    data[offset + size()] = '\0';
                 } else {
                     // If it is not the only string that uses the same container
                     // Detach from the container
@@ -433,11 +433,6 @@ namespace kki
             }
             return _begin;
         }
-
-        // Range
-        // TODO: ADD RANGE ITERATOR
-        // overriden () operator, (_begin, _end, _increment)
-        // Returns iterator
 
     private:
 
@@ -484,7 +479,6 @@ namespace kki
     };
 
     // TODO:
-    //      Arithmetic
     //      Ranges
     //      Iterations
     //      Adding different kinds of containers to print
@@ -516,6 +510,10 @@ namespace kki
 
         void set_data_container(ref<std::vector<char>>& other){
             _data = other;
+        }
+        ref<std::vector<char>> get_data_container()
+        {
+            return _data;
         }
 
         inline size_t size() const{
@@ -564,7 +562,6 @@ namespace kki
             return get(i);
         }
 
-
         // String manipulations
         string_builder& append(const char* c, size_t len){
             // So it doesnt reserve for too small strings
@@ -574,48 +571,53 @@ namespace kki
             std::copy(c, c+len, std::back_inserter(*_data));
             return *this;
         }
-        string_builder& append(const char* c){
+        template<typename T_pr>
+        string_builder& append(T_pr t){
+            return (*this) << t;
+        }
+
+        string_builder& operator<<(const char* c){
             return append(c, strlen(c));
         }
-        string_builder& append(const string& c){
+        string_builder& operator<<(const string& c){
             return append(c.begin(), c.size());
         }
-        string_builder& append(bool b){
+        string_builder& operator<<(bool b){
             return append(b ? "true" : "false");
         }
-        string_builder& append(char c){
+        string_builder& operator<<(char c){
             _data->push_back(c);
             return *this;
         }
-        string_builder& append(int i){
+        string_builder& operator<<(int i){
             size_t len = sprintf(buf, "%d", i);
             return append(buf, len);
         }
-        string_builder& append(long i){
+        string_builder& operator<<(long i){
             size_t len = sprintf(buf, "%li", i);
             return append(buf, len);
         }
-        string_builder& append(long long i){
+        string_builder& operator<<(long long i){
             size_t len = sprintf(buf, "%lli", i);
             return append(buf, len);
         }
-        string_builder& append(float f){
+        string_builder& operator<<(float f){
             size_t len = sprintf(buf, "%f", f);
             return append(buf, len);
         }
-        string_builder& append(double d){
+        string_builder& operator<<(double d){
             size_t len = sprintf(buf, "%lf", d);
             return append(buf, len);
         }
-        string_builder& append(unsigned u){
+        string_builder& operator<<(unsigned u){
             size_t len = sprintf(buf, "%u", u);
             return append(buf, len);
         }
-        string_builder& append(unsigned long u){
+        string_builder& operator<<(unsigned long u){
             size_t len = sprintf(buf, "%lu", u);
             return append(buf, len);
         }
-        string_builder& append(unsigned long long u){
+        string_builder& operator<<(unsigned long long u){
             size_t len = sprintf(buf, "%llu", u);
             return append(buf, len);
         }
@@ -635,20 +637,20 @@ namespace kki
             return *this;
         }
 
-        template <typename T_p>
-        string_builder& operator<<(const T_p& other){
-            return this->append(other);
-        }
-
         template<typename T_p>
         string_builder operator+(T_p p){
             string_builder s;
-            return s.append(_data->data(), _data->size()).append(p);
+            return s.append(_data->data(), _data->size()) << append(p);
         }
+        template<typename T_p>
+        string_builder& operator+=(T_p p){
+            return this->append(p);
+        }
+
 
         // To string
         string to_string(){
-            return string(_data->data(), _data->size());
+            return string(_data->size(), _data->data());
         }
         operator string(){
             return to_string();
@@ -699,8 +701,32 @@ namespace kki
         string_builder s(*this);
         return s << other;
     }
-}
 
+    template<typename T_add>
+    void string::operator+=(const T_add& other) {
+        string_builder sb(*this);
+        sb << other;
+        string new_str = sb.to_string();
+        this->container = new_str.container;
+    }
+
+    string_builder string::operator*(size_t _i) {
+        string_builder sb(this->size() * _i);
+        for (size_t i = 0; i < _i; ++i){
+            sb << (*this);
+        }
+        return sb;
+    }
+
+    void string::operator*=(size_t _i) {
+        string_builder sb(this->size() * _i);
+        for (size_t i = 0; i < _i; ++i){
+            sb << (*this);
+        }
+        string new_str = sb.to_string();
+        this->container = new_str.container;
+    }
+}
 
 std::ostream& operator <<(std::ostream& stream, const kki::string& string){
     return stream.write(string.begin(), string.size());
