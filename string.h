@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <utility>
 #include <vector>
 #include <cstring>
 #include <string>
@@ -517,7 +518,6 @@ namespace kki
     };
 
     // TODO:
-    //      Ranges
     //      Adding different kinds of containers to print
     class string_builder{
     public:
@@ -592,7 +592,7 @@ namespace kki
         // getter/setter //
         // ============= //
 
-        inline char& get(size_t i){
+        inline char& at(size_t i){
             assert(i < _data->size());
             return _data->at(i);
         }
@@ -606,7 +606,7 @@ namespace kki
         }
 
         inline char& operator[](size_t i){
-            return get(i);
+            return at(i);
         }
         inline char  operator[](size_t i) const{
             return get(i);
@@ -802,6 +802,63 @@ namespace kki
             return res;
         }
 
+        struct view{
+        public:
+            char& at(size_t i){
+                return _parent.at(_begin + i);
+            }
+            char& operator[](size_t i){
+                return at(i);
+            }
+
+            char* begin(){
+                return _parent.begin() + _begin;
+            }
+            char* end(){
+                return _parent.begin() + _end;
+            }
+            size_t size() const{
+                return _end - _begin;
+            }
+
+            template<typename T_pr>
+            string_builder& operator=(const T_pr& i){
+                string_builder other;
+                other << i;
+                size_t len = other.size();
+                if(len < size()){
+                    // Replacement string is shorter than the view
+                    std::copy(other.begin(), other.end(), begin());
+                    _parent._data->erase(_parent._data->begin() + _begin + len, _parent._data->begin() + _end);
+                }
+                else if(len >= size()) {
+                    // Replacement string is longer than the view
+                    std::copy(other.begin(), other.begin() + size(), begin());
+                    _parent._data->insert(_parent._data->begin() + _begin + size(), other.begin() + size(), other.end());
+                }
+                else{
+                    // Replacement string is of equal size
+                    std::copy(other.begin(), other.end(), begin());
+                }
+                return _parent;
+            }
+
+        private:
+            friend string_builder;
+            view(string_builder& parent, size_t begin, size_t end) : _parent{parent}, _begin{begin}, _end{end}{
+                assert(begin < end);
+                assert(end <= parent._data->size());
+            }
+
+            string_builder& _parent;
+            size_t _begin;
+            size_t _end;
+        };
+
+        view operator()(size_t begin, size_t end){
+            return {*this, begin, end};
+        }
+
     private:
 
         // Format recursion functions
@@ -821,7 +878,7 @@ namespace kki
             }
         }
 
-        char buf[256]{};
+        char buf[128]{};
         ref<std::vector<char>> _data;
     };
 

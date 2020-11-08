@@ -5,28 +5,10 @@
 #include "string.h"
 #include <deque>
 
-constexpr size_t hash(const char* str){
-    const long long p = 131;
-    const long long m = 4294967291; // 2^32 - 5, largest 32 bit prime
-    long long total = 0;
-    long long current_multiplier = 1;
-    for (int i = 0; str[i] != '\0'; ++i){
-        total = (total + current_multiplier * str[i]) % m;
-        current_multiplier = (current_multiplier * p) % m;
-    }
-    return total;
-}
-
 void test_find(const kki::string& s, kki::random& rand, size_t tests){
     size_t l{0};
     for (size_t i = 0; i < tests; ++i){
         char elem = rand.random_alnum();
-        //size_t len = rand.random_int(3);
-        //std::vector<char> element(len + 1);
-        //for(size_t j = 0; j < len; ++j){
-        //    element[j] = rand.random_alnum();
-        //}
-
         l += s.find(elem);
     }
 
@@ -37,15 +19,8 @@ void test_find_std(const std::string& s, kki::random& rand, size_t tests){
     size_t l{0};
     for (size_t i = 0; i < tests; ++i){
         char elem = rand.random_alnum();
-        //size_t len = rand.random_int(3);
-        //std::vector<char> element(len + 1);
-        //for(size_t j = 0; j < len; ++j){
-        //    element[j] = rand.random_alnum();
-        //}
-
         l += s.find(elem);
     }
-
     std::cout << "Find std: " << l << std::endl;
 }
 
@@ -156,63 +131,23 @@ void test_find_all(){
 
     std::cout << "Find     " << (end1 - begin1).count() << std::endl;
 }
-
-class a{
-public:
-    a()=default;
-
-    void print() const{
-        std::cout << 'A' << std::endl;
-    }
-};
-
-class b{
-public:
-    b()=default;
-
-    void print() const{
-        std::cout << 'B' << std::endl;
-    }
-};
-
-
-class c{
-public:
-
-    explicit c(int i) : i{i}{}
-
-    void print() const{
-        std::cout << "C " << i << std::endl;
-    }
-
-private:
-    int i = 0;
-};
-
-template <typename T_c, typename... T_args>
-void construct_in_place(T_args&&... args){
-    T_c obj(args...);
-
-    obj.print();
-}
-
 void test_switch(){
     std::string val;
-
-    switch (hash(val.c_str())){
+    std::cin >> val;
+    switch (kki::string::hash(val.c_str())){
         case kki::string::hash("monday"):
             std::cout << "Have a nice monday" << std::endl;
             break;
-        case hash("tuesday"):
+        case kki::string::hash("tuesday"):
             std::cout << "Have a nice tuesday" << std::endl;
             break;
-        case hash("wednesday"):
+        case kki::string::hash("wednesday"):
             std::cout << "Have a nice wednesday" << std::endl;
             break;
-        case hash("thursday"):
+        case kki::string::hash("thursday"):
             std::cout << "Have a nice thursday" << std::endl;
             break;
-        case hash("friday"):
+        case kki::string::hash("friday"):
             std::cout << "Have a nice friday" << std::endl;
             break;
         default:
@@ -220,8 +155,16 @@ void test_switch(){
     }
 }
 
-int main() {
-    kki::string s = kki::string::getline(std::cin);
+void test_sb_view(){
+    kki::string_builder string{"This is quite a long string"};
+    size_t begin = string.find("long");
+    size_t len = strlen("long");
 
-    std::cout << s;
+    std::cout << string << std::endl;
+    string(begin, begin + len) = "short";
+    std::cout << string << std::endl;
+}
+
+int main() {
+    test_sb_view();
 }

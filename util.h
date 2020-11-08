@@ -10,6 +10,12 @@
 
 namespace kki{
 
+    namespace math{
+        template <typename T> int signum(T val) {
+            return (T(0) < val) - (val < T(0));
+        }
+    }
+
     template <typename T>
     using ref = std::shared_ptr<T>;
 
