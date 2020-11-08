@@ -333,6 +333,9 @@ namespace kki
             assert(_first <= end());
             return string{container, _first, _last};
         }
+        string operator()(size_t first, size_t end){
+            return substr(first, end, false);
+        }
         string substr(const char *first, const char *last=nullptr){
             last = last != nullptr ? last : end();
             assert(begin() <= first);
@@ -340,18 +343,6 @@ namespace kki
             assert(last <= end());
 
             return string{container, first, last};
-        }
-
-        // ========== //
-        // Substrings //
-        // ========== //
-
-        string operator()(size_t first, size_t end){
-            return substr(first, end, false);
-        }
-
-        struct range_iterator{
-            range_iterator(size_t start, size_t end, int )
         }
 
         // ================= //
