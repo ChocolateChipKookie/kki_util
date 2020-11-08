@@ -5,13 +5,14 @@
 #ifndef KKI_UTIL_STRING_H
 #define KKI_UTIL_STRING_H
 
+#include <algorithm>
+#include <cassert>
 #include <vector>
 #include <cstring>
-#include <cassert>
-#include <algorithm>
-#include "util.h"
+#include <string>
 #include <ostream>
 #include <functional>
+#include "util.h"
 
 namespace kki
 {
@@ -60,6 +61,40 @@ namespace kki
         }
         inline size_t size() const{
             return _end - _begin;
+        }
+
+        void set_data(const ref<std::vector<char>>& data){
+            container = data;
+            _begin = container->data();
+            _end = _begin + container->size();
+        }
+
+        // ==== //
+        // Hash //
+        // ==== //
+
+        constexpr static size_t hash(const char* data){
+            const size_t p = 131, m = 4294967291; // 2^32 - 5, largest 32 bit prime
+            size_t total = 0, current_multiplier = 1;
+
+            for (size_t i = 0; data[i] != '\0'; ++i){
+                total = (total + current_multiplier * data[i]) % m;
+                current_multiplier = (current_multiplier * p) % m;
+            }
+            return total;
+        }
+        static size_t hash(const char* data, size_t len){
+            const size_t p = 131, m = 4294967291; // 2^32 - 5, largest 32 bit prime
+            size_t total = 0, current_multiplier = 1;
+
+            for (size_t i = 0; i < len; ++i){
+                total = (total + current_multiplier * data[i]) % m;
+                current_multiplier = (current_multiplier * p) % m;
+            }
+            return total;
+        }
+        size_t hash() const{
+            return hash(begin(), size());
         }
 
         // ========= //
@@ -425,12 +460,6 @@ namespace kki
             return _begin;
         }
 
-    private:
-
-        // Private constructor for member functions
-        string(const ref<std::vector<char>>& data, const char* begin, const char* end) : _begin(begin), _end(end), container(data){}
-
-        // UTIL
         static const char* find_ptr(const char* start, const char* end, char element){
             auto res = static_cast<const char*>(memchr(start, element, end - start));
             return res == nullptr ? end : res;
@@ -458,6 +487,18 @@ namespace kki
                 }
             }
         }
+
+        // ==== //
+        // UTIL //
+        // ==== //
+
+        template<typename T_stream>
+        static string getline(T_stream& input_stream){
+            static std::string line;
+            std::getline(input_stream, line);
+            return string(line.size(), line.data());
+        }
+
         static bool equal(const char* i1, const char* i2, size_t len){
             return memcmp(i1, i2, len) == 0;
         }
@@ -465,19 +506,27 @@ namespace kki
             return memcmp(i1, i2, len);
         }
 
+    private:
+
+        // Private constructor for member functions
+        string(const ref<std::vector<char>>& data, const char* begin, const char* end) : _begin(begin), _end(end), container(data){}
+
+
         const char* _begin{nullptr}, *_end{nullptr};
         ref<std::vector<char>> container;
     };
 
     // TODO:
     //      Ranges
-    //      Iterations
     //      Adding different kinds of containers to print
-    // TODO: Add range/range iterator that overrides () operator
     class string_builder{
     public:
         using iterator = char*;
+        static const size_t npos = string::npos;
 
+        // ============ //
+        // Constructors //
+        // ============ //
 
         explicit string_builder(size_t size=0) : _data(make_ref<std::vector<char>>()){
             _data->reserve(size);
@@ -486,7 +535,6 @@ namespace kki
             _data->reserve(size);
             std::fill_n(std::back_inserter(*_data), size, t);
         }
-
         explicit string_builder(const char* cstr) : string_builder(strlen(cstr), cstr){}
         explicit string_builder(const string& string) : string_builder(string.size(), string.begin()){}
         string_builder(size_t len, const char* data) : _data(make_ref<std::vector<char>>()){
@@ -495,9 +543,13 @@ namespace kki
         }
         explicit string_builder(ref<std::vector<char>>& data_container) : _data(data_container){}
         template<typename ...T_args>
-        explicit string_builder(const char *format, T_args ...args){
+        explicit string_builder(const char *format, T_args ...args) : _data(make_ref<std::vector<char>>()){
             format_recursion(*this, format, args...);
         }
+
+        // ================== //
+        // Data getter/setter //
+        // ================== //
 
         void set_data_container(ref<std::vector<char>>& other){
             _data = other;
@@ -506,6 +558,10 @@ namespace kki
         {
             return _data;
         }
+
+        // =============== //
+        // Basic functions //
+        // =============== //
 
         inline size_t size() const{
             return _data->size();
@@ -522,17 +578,20 @@ namespace kki
         inline const char* data() const{
             return _data->data();
         }
-        inline iterator begin(){
+        inline iterator begin() const {
             return _data->data();
         }
-        inline iterator end(){
+        inline iterator end() const {
             return _data->data() + _data->size();
         }
         inline char& back(){
             return _data->back();
         }
 
-        // Get/Set operators
+        // ============= //
+        // getter/setter //
+        // ============= //
+
         inline char& get(size_t i){
             assert(i < _data->size());
             return _data->at(i);
@@ -553,7 +612,10 @@ namespace kki
             return get(i);
         }
 
-        // String manipulations
+        // ==================== //
+        // String manipulations //
+        // ==================== //
+
         string_builder& append(const char* c, size_t len){
             // So it doesnt reserve for too small strings
             if(len > _data->capacity()){
@@ -638,8 +700,10 @@ namespace kki
             return this->append(p);
         }
 
+        // ==================== //
+        // Conversion to string //
+        // ==================== //
 
-        // To string
         string to_string(){
             return string(_data->size(), _data->data());
         }
@@ -647,12 +711,95 @@ namespace kki
             return to_string();
         }
 
-        // Format
+        // ====== //
+        // Format //
+        // ====== //
+
         template<typename... T_args>
         static string format(const char* format, T_args... args){
             string_builder b;
             format_recursion(b, format, args...);
             return b.to_string();
+        }
+
+        // ==== //
+        // Find //
+        // ==== //
+
+        // Find
+        size_t find(char element, size_t start = 0) const{
+            assert(data() + start <= end());
+            auto res = string::find_ptr(begin() + start, end(), element);
+            return res == end() ? npos : res-begin();
+        }
+        size_t find(const char* element, size_t start = 0) const{
+            return find(element, strlen(element), start);
+        }
+        size_t find(const string& element, size_t start = 0) const{
+            return find(element.begin(), element.size(), start);
+        }
+        size_t find(const char* element, size_t len, size_t start) const{
+            const char* pos = string::find_ptr(begin() + start, end(), element, len);
+            return pos == end() ? npos : pos - begin();
+        }
+
+        // Find if
+        template<typename T_pred>
+        size_t find_if(const T_pred& predicate, size_t start = 0) const{
+            const char* current = data() + start;
+            assert(current <= end());
+            while(current < end() && !predicate(*current))
+                current++;
+
+            return current == end() ? npos : current-begin();
+        }
+
+        // Find all instances
+        template<typename T_alloc=std::allocator<size_t>>
+        std::vector<size_t, T_alloc> find_all(char element, size_t start = 0, size_t elements = 0) const{
+            std::vector<size_t, T_alloc> res;
+            res.reserve(elements);
+            size_t current_pos = find(element, start);
+            while (current_pos != npos){
+                res.push_back(current_pos);
+                current_pos = find(element, current_pos + 1);
+            }
+            res.shrink_to_fit();
+            return res;
+        }
+        template<typename T_alloc=std::allocator<size_t>>
+        std::vector<size_t, T_alloc> find_all(const string& element, size_t start = 0, size_t elements = 0) const{
+            return find_all(element.begin(), element.size(), start, elements);
+        }
+        template<typename T_alloc=std::allocator<size_t>>
+        std::vector<size_t, T_alloc> find_all(const char* element, size_t start = 0, size_t elements = 0) const{
+            return find_all(element, strlen(element), start, elements);
+        }
+        template<typename T_alloc=std::allocator<size_t>>
+        std::vector<size_t, T_alloc> find_all(const char* element, size_t len, size_t start, size_t elements) const{
+            std::vector<size_t, T_alloc> res;
+            res.reserve(elements);
+            size_t current_pos = find(element, len, start);
+            while (current_pos != npos){
+                res.push_back(current_pos);
+                current_pos = find(element, len, current_pos + 1);
+            }
+            res.shrink_to_fit();
+            return res;
+        }
+
+        // Find all instances conditional
+        template<typename T_alloc=std::allocator<size_t>, typename T_pred>
+        std::vector<size_t, T_alloc> find_all_if(const T_pred& pred, size_t start = 0, size_t elements = 0) const{
+            std::vector<size_t, T_alloc> res;
+            res.reserve(elements);
+            size_t current_pos = find_if(pred, start);
+            while (current_pos != npos ){
+                res.push_back(current_pos);
+                current_pos = find_if(pred, current_pos + 1);
+            }
+            res.shrink_to_fit();
+            return res;
         }
 
     private:
@@ -726,5 +873,6 @@ std::ostream& operator <<(std::ostream& stream, const kki::string& string){
 std::ostream& operator <<(std::ostream& stream, const kki::string_builder& builder){
     return stream.write(builder.data(), builder.size());
 }
+
 
 #endif //KKI_UTIL_STRING_H

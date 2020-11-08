@@ -196,24 +196,11 @@ void construct_in_place(T_args&&... args){
     obj.print();
 }
 
-int main() {
-    construct_in_place<c>(1);
-
-
-    return 0;
-    kki::string a{"AdiDoloresMia"};
-
-    kki::string_builder sb{"Adi"};
-
-
-    a = sb;
-
-    std::cout << a << std::endl;
-    return 0;
+void test_switch(){
     std::string val;
 
     switch (hash(val.c_str())){
-        case hash("monday"):
+        case kki::string::hash("monday"):
             std::cout << "Have a nice monday" << std::endl;
             break;
         case hash("tuesday"):
@@ -231,5 +218,10 @@ int main() {
         default:
             std::cout << "It is the weekend" << std::endl;
     }
-    return 0;
+}
+
+int main() {
+    kki::string s = kki::string::getline(std::cin);
+
+    std::cout << s;
 }
