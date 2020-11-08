@@ -165,6 +165,17 @@ void test_sb_view(){
     std::cout << string << std::endl;
 }
 
+void test_apply(){
+    kki::string str{"This is quite a long string"};
+
+    std::cout << str << std::endl;
+    str.apply(toupper);
+    std::cout << str << std::endl;
+    auto other = str.applied(tolower);
+    std::cout << str << std::endl;
+    std::cout << other << std::endl;
+}
+
 int main() {
-    test_sb_view();
+    test_apply();
 }

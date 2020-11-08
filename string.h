@@ -291,6 +291,30 @@ namespace kki
         }
 
         // ===== //
+        // Apply //
+        // ===== //
+
+        // Converts string using a given predicate
+        string& apply(const std::function<char(char)>& predicate){
+            // Try to detach the string so it is the only string that uses the memory
+            detach();
+            // Fetch variables for iteration
+            char* b = container->data() + (begin() - container->data());
+            char* e = container->data() + (end() - container->data());
+            // Iterate over all data
+            for (char* i = b; i != e; ++i){
+                *i = predicate(*i);
+            }
+            return *this;
+        }
+
+        string applied(const std::function<char(char)>& predicate) const {
+            string new_string = clone();
+            new_string.apply(predicate);
+            return new_string;
+        }
+
+        // ===== //
         // Split //
         // ===== //
 
@@ -461,6 +485,17 @@ namespace kki
             return _begin;
         }
 
+        string clone() const {
+            ref<std::vector<char>> new_container = make_ref<std::vector<char>>();
+            new_container->reserve(size());
+            std::copy(begin(), end(), std::back_inserter(*new_container));
+            return {new_container, new_container->data(), new_container->data() + new_container->size()};
+        }
+
+        // ==== //
+        // UTIL //
+        // ==== //
+
         static const char* find_ptr(const char* start, const char* end, char element){
             auto res = static_cast<const char*>(memchr(start, element, end - start));
             return res == nullptr ? end : res;
@@ -489,9 +524,6 @@ namespace kki
             }
         }
 
-        // ==== //
-        // UTIL //
-        // ==== //
 
         template<typename T_stream>
         static string getline(T_stream& input_stream){
@@ -511,7 +543,6 @@ namespace kki
 
         // Private constructor for member functions
         string(const ref<std::vector<char>>& data, const char* begin, const char* end) : _begin(begin), _end(end), container(data){}
-
 
         const char* _begin{nullptr}, *_end{nullptr};
         ref<std::vector<char>> container;
