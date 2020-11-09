@@ -1,9 +1,10 @@
 #include <iostream>
 #include <array>
 #include <chrono>
-#include "random.h"
-#include "string.h"
+#include "include/kki/random.h"
+#include "include/kki/string.h"
 #include <deque>
+#include <fstream>
 
 void test_find(const kki::string& s, kki::random& rand, size_t tests){
     size_t l{0};
@@ -131,6 +132,7 @@ void test_find_all(){
 
     std::cout << "Find     " << (end1 - begin1).count() << std::endl;
 }
+
 void test_switch(){
     std::string val;
     std::cin >> val;
@@ -176,6 +178,36 @@ void test_apply(){
     std::cout << other << std::endl;
 }
 
+void test_range(){
+    kki::string_builder str{"This is a long string!"};
+    auto pos = str.find(" a ");
+    str(pos) = " not";
+
+    std::cout << str << std::endl;
+
+    pos = str.find("not");
+    auto len = kki::string::length(" not");
+    str(pos, len) = "";
+    std::cout << str << std::endl;
+
+    pos = str.find("long");
+    auto end = pos + kki::string::length("long");
+    str(pos, end, false) = "short";
+    std::cout << str << std::endl;
+}
+
 int main() {
-    test_apply();
+    std::ifstream file("../main.cpp");
+    kki::string s;
+
+    while (){
+        file >> s;
+
+        if(file.eof()) break;
+
+        std::cout << s << std::endl;
+    }
+
+
+//    test_range();
 }

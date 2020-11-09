@@ -33,7 +33,8 @@ namespace kki
         // Constructors //
         // ============ //
 
-        string(const char *cstr) : string(strlen(cstr), cstr){}
+        string() : string(""){}
+        string(const char *cstr) : string(length(cstr), cstr){}
         string(size_t len, const char *data) {
             container = make_ref<std::vector<char>>();
             container->reserve(len + 1);
@@ -112,7 +113,7 @@ namespace kki
         // ========== //
 
         inline bool operator ==(const char* other) const {
-            size_t len = strlen(other);
+            size_t len = length(other);
             return size() == len && equal(data(), other, len);
         }
         inline bool operator ==(const string& other) const {
@@ -127,28 +128,28 @@ namespace kki
         }
 
         inline bool operator <(const char* other) const {
-            return compare(data(), other, std::min(size(), strlen(other))) < 0;
+            return compare(data(), other, std::min(size(), length(other))) < 0;
         }
         inline bool operator <(const string& other) const {
             return compare(data(), other.data(), std::min(size(), other.size())) < 0;
         }
 
         inline bool operator <=(const char* other) const {
-            return compare(data(), other, std::min(size(), strlen(other))) <= 0;
+            return compare(data(), other, std::min(size(), length(other))) <= 0;
         }
         inline bool operator <=(const string& other) const {
             return compare(data(), other.data(), std::min(size(), other.size())) <= 0;
         }
 
         inline bool operator >(const char* other) const {
-            return compare(data(), other, std::min(size(), strlen(other))) > 0;
+            return compare(data(), other, std::min(size(), length(other))) > 0;
         }
         inline bool operator >(const string& other) const {
             return compare(data(), other.data(), std::min(size(), other.size())) > 0;
         }
 
         inline bool operator >=(const char* other) const {
-            return compare(data(), other, std::min(size(), strlen(other))) >= 0;
+            return compare(data(), other, std::min(size(), length(other))) >= 0;
         }
         inline bool operator >=(const string& other) const {
             return compare(data(), other.data(), std::min(size(), other.size())) >= 0;
@@ -183,7 +184,7 @@ namespace kki
             return res == end() ? npos : res-begin();
         }
         size_t find(const char* element, size_t start = 0) const{
-            return find(element, strlen(element), start);
+            return find(element, length(element), start);
         }
         size_t find(const string& element, size_t start = 0) const{
             return find(element.begin(), element.size(), start);
@@ -223,7 +224,7 @@ namespace kki
         }
         template<typename T_alloc=std::allocator<size_t>>
         std::vector<size_t, T_alloc> find_all(const char* element, size_t start = 0, size_t elements = 0) const{
-            return find_all(element, strlen(element), start, elements);
+            return find_all(element, length(element), start, elements);
         }
         template<typename T_alloc=std::allocator<size_t>>
         std::vector<size_t, T_alloc> find_all(const char* element, size_t len, size_t start, size_t elements) const{
@@ -353,7 +354,7 @@ namespace kki
         }
         // Split string with any version of string
         std::vector<string> split(const char* delimiter, size_t splits = 0) const{
-            return split(delimiter, strlen(delimiter), splits);
+            return split(delimiter, length(delimiter), splits);
         }
         std::vector<string> split(const string& delimiter, size_t splits = 0) const{
             return split(delimiter.begin(), delimiter.size(), splits);
@@ -493,6 +494,14 @@ namespace kki
         }
 
         // ==== //
+        // Cast //
+        // ==== //
+
+        operator bool() const{
+            return size() != 0;
+        }
+
+        // ==== //
         // UTIL //
         // ==== //
 
@@ -532,11 +541,36 @@ namespace kki
             return string(line.size(), line.data());
         }
 
+        template<typename T_stream>
+        static bool getline(T_stream& input_stream, string& str){
+            static std::string line;
+            bool res = static_cast<bool>(std::getline(input_stream, line));
+            str = string(line.size(), line.data());
+            return res;
+        }
+
+        template<typename T_stream>
+        bool getline(T_stream& input_stream){
+            static std::string line;
+            bool res = static_cast<bool>(std::getline(input_stream, line));
+            detach();
+            container->clear();
+            container->reserve(line.length());
+            std::copy(line.begin(), line.end(), std::back_inserter(*container));
+            container->push_back('\0');
+            _begin = container->data();
+            _end = _begin + line.length();
+            return res;
+        }
+
         static bool equal(const char* i1, const char* i2, size_t len){
             return memcmp(i1, i2, len) == 0;
         }
         static int compare(const char* i1, const char* i2, size_t len){
             return memcmp(i1, i2, len);
+        }
+        static inline size_t length(const char* cstr){
+            return strlen(cstr);
         }
 
     private:
@@ -566,7 +600,7 @@ namespace kki
             _data->reserve(size);
             std::fill_n(std::back_inserter(*_data), size, t);
         }
-        explicit string_builder(const char* cstr) : string_builder(strlen(cstr), cstr){}
+        explicit string_builder(const char* cstr) : string_builder(string::length(cstr), cstr){}
         explicit string_builder(const string& string) : string_builder(string.size(), string.begin()){}
         string_builder(size_t len, const char* data) : _data(make_ref<std::vector<char>>()){
             _data->reserve(len);
@@ -661,7 +695,7 @@ namespace kki
         }
 
         string_builder& operator<<(const char* c){
-            return append(c, strlen(c));
+            return append(c, string::length(c));
         }
         string_builder& operator<<(const string& c){
             return append(c.begin(), c.size());
@@ -764,7 +798,7 @@ namespace kki
             return res == end() ? npos : res-begin();
         }
         size_t find(const char* element, size_t start = 0) const{
-            return find(element, strlen(element), start);
+            return find(element, string::length(element), start);
         }
         size_t find(const string& element, size_t start = 0) const{
             return find(element.begin(), element.size(), start);
@@ -804,7 +838,7 @@ namespace kki
         }
         template<typename T_alloc=std::allocator<size_t>>
         std::vector<size_t, T_alloc> find_all(const char* element, size_t start = 0, size_t elements = 0) const{
-            return find_all(element, strlen(element), start, elements);
+            return find_all(element, string::length(element), start, elements);
         }
         template<typename T_alloc=std::allocator<size_t>>
         std::vector<size_t, T_alloc> find_all(const char* element, size_t len, size_t start, size_t elements) const{
@@ -871,13 +905,15 @@ namespace kki
                     // Replacement string is of equal size
                     std::copy(other.begin(), other.end(), begin());
                 }
+                // Update the end of the view to include the whole new string
+                _end = _begin + len;
                 return _parent;
             }
 
         private:
             friend string_builder;
             view(string_builder& parent, size_t begin, size_t end) : _parent{parent}, _begin{begin}, _end{end}{
-                assert(begin < end);
+                assert(begin <= end);
                 assert(end <= parent._data->size());
             }
 
@@ -886,8 +922,13 @@ namespace kki
             size_t _end;
         };
 
-        view operator()(size_t begin, size_t end){
-            return {*this, begin, end};
+        // Inserter view;
+        view operator()(size_t begin){
+            return {*this, begin, begin};
+        }
+
+        view operator()(size_t begin, size_t n, bool use_len = true){
+            return {*this, begin, use_len ? (begin + n) : n};
         }
 
     private:
@@ -954,6 +995,11 @@ namespace kki
     }
 }
 
+std::istream& operator >>(std::istream& stream, kki::string& string){
+    kki::string::getline(stream, string);
+    return stream;
+}
+
 std::ostream& operator <<(std::ostream& stream, const kki::string& string){
     return stream.write(string.begin(), string.size());
 }
@@ -961,6 +1007,5 @@ std::ostream& operator <<(std::ostream& stream, const kki::string& string){
 std::ostream& operator <<(std::ostream& stream, const kki::string_builder& builder){
     return stream.write(builder.data(), builder.size());
 }
-
 
 #endif //KKI_UTIL_STRING_H

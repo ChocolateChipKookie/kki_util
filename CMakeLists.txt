@@ -8,4 +8,4 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-add_executable(kki_util main.cpp ../../../Faks/semestar_9/NENR/Zadace/zad_3/string.h util.h random.h string.h)
+add_executable(kki_util main.cpp ../../../Faks/semestar_9/NENR/Zadace/zad_3/string.h include/kki/util.h include/kki/random.h include/kki/string.h)
