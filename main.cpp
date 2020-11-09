@@ -200,7 +200,7 @@ int main() {
     std::ifstream file("../main.cpp");
     kki::string s;
 
-    while (){
+    while (s.getline(file)){
         file >> s;
 
         if(file.eof()) break;

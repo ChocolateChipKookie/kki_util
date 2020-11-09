@@ -533,22 +533,6 @@ namespace kki
             }
         }
 
-
-        template<typename T_stream>
-        static string getline(T_stream& input_stream){
-            static std::string line;
-            std::getline(input_stream, line);
-            return string(line.size(), line.data());
-        }
-
-        template<typename T_stream>
-        static bool getline(T_stream& input_stream, string& str){
-            static std::string line;
-            bool res = static_cast<bool>(std::getline(input_stream, line));
-            str = string(line.size(), line.data());
-            return res;
-        }
-
         template<typename T_stream>
         bool getline(T_stream& input_stream){
             static std::string line;
@@ -993,10 +977,28 @@ namespace kki
         string new_str = sb.to_string();
         this->container = new_str.container;
     }
+
+    // Util
+
+    template<typename T_stream>
+    static string getline(T_stream& input_stream){
+        static std::string line;
+        std::getline(input_stream, line);
+        return string(line.size(), line.data());
+    }
+
+    template<typename T_stream>
+    static bool getline(T_stream& input_stream, string& str){
+        static std::string line;
+        bool res = static_cast<bool>(std::getline(input_stream, line));
+        str = string(line.size(), line.data());
+        return res;
+    }
+
 }
 
 std::istream& operator >>(std::istream& stream, kki::string& string){
-    kki::string::getline(stream, string);
+    string.getline(stream);
     return stream;
 }
 
