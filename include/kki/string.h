@@ -263,7 +263,7 @@ namespace kki
                 --_end;
             return *this;
         }
-        string r_trimmed(){
+        string r_trimmed() const {
             const char* new_end = data() + size();
             while (new_end != begin() && isspace(*(new_end - 1)))
                 --new_end;
@@ -275,7 +275,7 @@ namespace kki
                 ++_begin;
             return *this;
         }
-        string l_trimmed(){
+        string l_trimmed() const {
             const char* new_begin = data();
             while (new_begin != _end && isspace(*new_begin))
                 ++new_begin;
@@ -287,7 +287,7 @@ namespace kki
             r_trim();
             return *this;
         }
-        string trimmed(){
+        string trimmed() const {
             return l_trimmed().r_trim();
         }
 
@@ -1013,5 +1013,17 @@ std::ostream& operator <<(std::ostream& stream, const kki::string& string){
 std::ostream& operator <<(std::ostream& stream, const kki::string_builder& builder){
     return stream.write(builder.data(), builder.size());
 }
+
+namespace std {
+    template <>
+    struct hash<kki::string>
+    {
+        std::size_t operator()(const kki::string& k) const
+        {
+            return k.hash();
+        }
+    };
+}
+
 
 #endif //KKI_UTIL_STRING_H
