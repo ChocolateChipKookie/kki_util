@@ -257,25 +257,25 @@ namespace kki
         // Trim //
         // ==== //
 
-        // Left trim
-        string& l_trim(){
+        // Right trim
+        string& r_trim(){
             while (_end != begin() && isspace(*(_end - 1)))
                 --_end;
             return *this;
         }
-        string l_trimmed(){
+        string r_trimmed(){
             const char* new_end = data() + size();
             while (new_end != begin() && isspace(*(new_end - 1)))
                 --new_end;
             return string(container, begin(), new_end);
         }
-        // Right trim
-        string& r_trim(){
+        // Left trim
+        string& l_trim(){
             while (_begin != _end && isspace(*_begin))
                 ++_begin;
             return *this;
         }
-        string r_trimmed(){
+        string l_trimmed(){
             const char* new_begin = data();
             while (new_begin != _end && isspace(*new_begin))
                 ++new_begin;
@@ -499,6 +499,10 @@ namespace kki
 
         operator bool() const{
             return size() != 0;
+        }
+
+        operator const char*() {
+            return cstr();
         }
 
         // ==== //

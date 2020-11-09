@@ -201,10 +201,6 @@ int main() {
     kki::string s;
 
     while (s.getline(file)){
-        file >> s;
-
-        if(file.eof()) break;
-
         std::cout << s << std::endl;
     }
 
